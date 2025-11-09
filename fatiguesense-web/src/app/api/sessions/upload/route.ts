@@ -18,6 +18,24 @@ interface GyroDataPoint {
   z: number;
 }
 
+interface UploadSessionData {
+  timestamp?: string;
+  results?: Array<{
+    type: string;
+    score: number;
+    raw?: Record<string, unknown>;
+    at?: number;
+  }>;
+  metadata?: {
+    deviceId?: string;
+    testType?: string;
+    durationSeconds?: number;
+    totalSamples?: number;
+  };
+  imuData?: IMUDataPoint[];
+  gyroData?: GyroDataPoint[];
+}
+
 /**
  * POST /api/sessions/upload - Bulk upload sessions from mobile app
  * 
@@ -40,7 +58,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Determine data format and extract sessions
-    let sessions = [];
+    let sessions: UploadSessionData[] = [];
 
     if (Array.isArray(body)) {
       // Direct array of sessions
@@ -71,7 +89,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate sessions
-    const validSessions = sessions.filter(s => 
+    const validSessions = sessions.filter((s: UploadSessionData) => 
       s.results && Array.isArray(s.results) && s.results.length > 0
     );
 
