@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
             console.log(`[UPLOAD] Base timestamp: ${new Date(baseTimestamp).toISOString()}`);
             
             const timeSeriesSamples = sessionData.imuData.map((acc: IMUDataPoint, idx: number) => {
-              const gyro: GyroDataPoint = sessionData.gyroData[idx] || { x: 0, y: 0, z: 0 };
+              const gyro: GyroDataPoint = (sessionData.gyroData && sessionData.gyroData[idx]) || { x: 0, y: 0, z: 0 };
               
               // Handle both absolute and relative timestamps
               let absoluteTimestamp: number;
