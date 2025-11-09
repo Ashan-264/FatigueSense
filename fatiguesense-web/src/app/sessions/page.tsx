@@ -8,6 +8,8 @@ import TappingRhythmHistogram from "@/components/TappingRhythmHistogram";
 import SwayStabilityGraph from "@/components/SwayStabilityGraph";
 import MovementVariabilityGraph from "@/components/MovementVariabilityGraph";
 
+export const dynamic = 'force-dynamic';
+
 interface TestResult {
   type: string;
   score: number;
