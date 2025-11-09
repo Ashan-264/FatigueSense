@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import mongoose from 'mongoose';
 import connectToDatabase from '@/lib/mongodb';
 import Session from '@/models/Session';
 import TimeSeriesIMU from '@/models/TimeSeriesIMU';
