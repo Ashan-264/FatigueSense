@@ -281,11 +281,14 @@ export default function Index() {
       }
 
       // Prepare data in format compatible with web app upload endpoint
+      // Include IMU data for time-series visualization
       const exportData = {
         sessions: allSessions.map((session) => ({
           timestamp: session.timestamp,
           results: session.results,
           metadata: session.metadata,
+          imuData: session.imuData || [],
+          gyroData: session.gyroData || [],
         })),
         exportedAt: new Date().toISOString(),
         totalSessions: allSessions.length,

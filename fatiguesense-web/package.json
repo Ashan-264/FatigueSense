@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:init": "node scripts/db-init.js",
-    "sync-mobile": "node scripts/sync-mobile.js"
+    "sync-mobile": "node scripts/sync-mobile.js",
+    "timeseries:init": "node scripts/init-timeseries.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.34.5",

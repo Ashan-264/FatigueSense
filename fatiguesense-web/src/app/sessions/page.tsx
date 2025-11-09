@@ -133,6 +133,57 @@ export default function SessionsPage() {
     }
   };
 
+  const handleDeleteAllSessions = async () => {
+    if (!confirm(`⚠️ DELETE ALL ${sessions.length} SESSIONS?\n\nThis will permanently delete all sessions and their time-series data from the database.\n\nThis action CANNOT be undone!`)) {
+      return;
+    }
+
+    // Double confirmation for safety
+    if (!confirm("Are you ABSOLUTELY sure? Type 'yes' in your mind and click OK to proceed.")) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      let deletedCount = 0;
+      let failedCount = 0;
+
+      // Delete all sessions one by one
+      for (const session of sessions) {
+        try {
+          const response = await fetch(`/api/sessions/${session._id}`, {
+            method: "DELETE",
+          });
+
+          if (response.ok) {
+            deletedCount++;
+          } else {
+            failedCount++;
+          }
+        } catch {
+          failedCount++;
+        }
+      }
+
+      // Refresh sessions list
+      await fetchSessions();
+      setSelectedSession(null);
+
+      if (failedCount > 0) {
+        setError(`Deleted ${deletedCount} sessions, ${failedCount} failed`);
+      } else {
+        alert(`✅ Successfully deleted all ${deletedCount} sessions!`);
+      }
+    } catch (err: any) {
+      console.error("Delete all error:", err);
+      setError(err.message || "Failed to delete all sessions");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-green-600 dark:text-green-400";
     if (score >= 60) return "text-blue-600 dark:text-blue-400";
@@ -181,6 +232,12 @@ export default function SessionsPage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <a
+              href="/timeseries"
+              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium"
+            >
+              📊 Time-Series
+            </a>
             <ThemeToggle />
             {isLoaded && user && (
               <>
@@ -352,26 +409,54 @@ export default function SessionsPage() {
               </svg>
               Your Sessions ({sessions.length})
             </h2>
-            <button
-              onClick={fetchSessions}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50"
-            >
-              <svg
-                className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            
+            <div className="flex items-center gap-3">
+              {/* Delete All Button */}
+              {sessions.length > 0 && (
+                <button
+                  onClick={handleDeleteAllSessions}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                  Delete All
+                </button>
+              )}
+              
+              {/* Refresh Button */}
+              <button
+                onClick={fetchSessions}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              Refresh
-            </button>
+                <svg
+                  className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                Refresh
+              </button>
+            </div>
           </div>
 
           {loading ? (
