@@ -202,24 +202,26 @@ export async function POST(request: NextRequest) {
               
               // Also check via direct MongoDB driver
               const db = mongoose.connection.db;
-              const directCount = await db.collection('fatigue_imu').countDocuments({ sessionId: session._id.toString() });
-              console.log(`[UPLOAD] 🔍 Verification via direct driver: ${directCount} documents in 'fatigue_imu'`);
-              
-              // Check what collection the model is actually using
-              const modelCollectionName = TimeSeriesIMU.collection.name;
-              console.log(`[UPLOAD] 📂 Model collection name: ${modelCollectionName}`);
-              
-              if (verifyCount === 0 && directCount === 0) {
-                console.error(`[UPLOAD] ⚠️ WARNING: No documents found after insert!`);
-                // Check what collection it went to
-                const collections = await db.listCollections().toArray();
-                console.log(`[UPLOAD] Available collections:`, collections.map(c => c.name));
+              if (db) {
+                const directCount = await db.collection('fatigue_imu').countDocuments({ sessionId: session._id.toString() });
+                console.log(`[UPLOAD] 🔍 Verification via direct driver: ${directCount} documents in 'fatigue_imu'`);
                 
-                // Check all collections for this sessionId
-                for (const coll of collections) {
-                  const count = await db.collection(coll.name).countDocuments({ sessionId: session._id.toString() });
-                  if (count > 0) {
-                    console.log(`[UPLOAD] ✅ Found ${count} documents in collection: ${coll.name}`);
+                // Check what collection the model is actually using
+                const modelCollectionName = TimeSeriesIMU.collection.name;
+                console.log(`[UPLOAD] 📂 Model collection name: ${modelCollectionName}`);
+                
+                if (verifyCount === 0 && directCount === 0) {
+                  console.error(`[UPLOAD] ⚠️ WARNING: No documents found after insert!`);
+                  // Check what collection it went to
+                  const collections = await db.listCollections().toArray();
+                  console.log(`[UPLOAD] Available collections:`, collections.map(c => c.name));
+                  
+                  // Check all collections for this sessionId
+                  for (const coll of collections) {
+                    const count = await db.collection(coll.name).countDocuments({ sessionId: session._id.toString() });
+                    if (count > 0) {
+                      console.log(`[UPLOAD] ✅ Found ${count} documents in collection: ${coll.name}`);
+                    }
                   }
                 }
               }

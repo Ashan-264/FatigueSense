@@ -21,6 +21,13 @@ export async function GET(
 
     await connectToDatabase();
     const db = mongoose.connection.db;
+    
+    if (!db) {
+      return NextResponse.json(
+        { error: 'Database connection not available' },
+        { status: 500 }
+      );
+    }
 
     // Debug: Check if any data exists for this session
     const sampleCount = await db.collection('fatigue_imu').countDocuments({ sessionId });

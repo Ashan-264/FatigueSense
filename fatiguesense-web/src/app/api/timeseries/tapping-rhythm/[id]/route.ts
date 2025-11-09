@@ -21,6 +21,13 @@ export async function GET(
 
     await connectToDatabase();
     const db = mongoose.connection.db;
+    
+    if (!db) {
+      return NextResponse.json(
+        { error: 'Database connection not available' },
+        { status: 500 }
+      );
+    }
 
     // Aggregation pipeline for tapping rhythm
     const pipeline = [

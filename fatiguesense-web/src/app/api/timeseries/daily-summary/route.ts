@@ -30,6 +30,13 @@ export async function GET(request: NextRequest) {
     }
 
     const db = mongoose.connection.db;
+    
+    if (!db) {
+      return NextResponse.json(
+        { error: 'Database connection not available' },
+        { status: 500 }
+      );
+    }
 
     // Aggregation pipeline for daily summary
     const pipeline = [
