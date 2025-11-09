@@ -9,6 +9,8 @@ import MovementVariabilityGraph from "@/components/MovementVariabilityGraph";
 import TappingRhythmHistogram from "@/components/TappingRhythmHistogram";
 import ThemeToggle from "@/components/ThemeToggle";
 
+export const dynamic = 'force-dynamic';
+
 interface TestResult {
   type: string;
   score: number;

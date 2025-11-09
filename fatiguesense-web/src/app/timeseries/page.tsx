@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { useSearchParams } from 'next/navigation';
 import SwayStabilityChart from '@/components/charts/SwayStabilityChart';
 import MovementSmoothnessChart from '@/components/charts/MovementSmoothnessChart';
 import TappingRhythmChart from '@/components/charts/TappingRhythmChart';
 import DailySummaryChart from '@/components/charts/DailySummaryChart';
+
+export const dynamic = 'force-dynamic';
 
 interface Session {
   _id: string;
