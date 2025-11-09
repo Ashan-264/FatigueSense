@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Accelerometer, Gyroscope } from "expo-sensors";
@@ -19,6 +20,7 @@ import * as Device from "expo-device";
 
 import Card from "../components/Card";
 import Runner from "../components/Runner";
+import DrawerMenu from "../components/DrawerMenu";
 import {
   computeSway,
   computeTappingScore,
@@ -75,6 +77,7 @@ export default function Index() {
   const [gyroData, setGyroData] = useState<GyroSample[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
+  const [drawerVisible, setDrawerVisible] = useState<boolean>(false);
 
   const tap = results.filter((r) => r.type === "tapping").slice(-1)[0];
   const sway = results.filter((r) => r.type === "sway").slice(-1)[0];
@@ -251,6 +254,70 @@ export default function Index() {
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
+      Alert.alert("Export Failed", `Error: ${error}`);
+    }
+  };
+
+  const exportAllSessions = async () => {
+    try {
+      const storedSessions = await AsyncStorage.getItem(SESSIONS_STORAGE_KEY);
+      
+      if (!storedSessions) {
+        Alert.alert(
+          "No Sessions Found",
+          "No saved sessions to export. Complete some tests first."
+        );
+        return;
+      }
+
+      const allSessions: Session[] = JSON.parse(storedSessions);
+
+      if (allSessions.length === 0) {
+        Alert.alert(
+          "No Sessions Found",
+          "No saved sessions to export. Complete some tests first."
+        );
+        return;
+      }
+
+      // Prepare data in format compatible with web app upload endpoint
+      const exportData = {
+        sessions: allSessions.map((session) => ({
+          timestamp: session.timestamp,
+          results: session.results,
+          metadata: session.metadata,
+        })),
+        exportedAt: new Date().toISOString(),
+        totalSessions: allSessions.length,
+        deviceInfo: {
+          platform: Platform.OS,
+          modelName: Device.modelName || "unknown",
+          osVersion: Device.osVersion || "unknown",
+          manufacturer: Device.manufacturer || "unknown",
+        },
+      };
+
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const filename = `fatiguesense_all_sessions_${Date.now()}.json`;
+      const file = new File(Paths.cache, filename);
+
+      await file.write(jsonString);
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(file.uri, {
+          mimeType: "application/json",
+          dialogTitle: `Export All Sessions (${allSessions.length})`,
+        });
+      } else {
+        Alert.alert(
+          "Export Successful",
+          `${allSessions.length} sessions saved to ${file.uri}`
+        );
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      console.error("Export all sessions failed:", error);
       Alert.alert("Export Failed", `Error: ${error}`);
     }
   };
@@ -626,21 +693,35 @@ export default function Index() {
 
       <SignedIn>
         <SafeAreaView style={{ flex: 1, backgroundColor: "#0f0f0f" }}>
-          <View style={{ padding: 20 }}>
-            <Text style={{ color: "white", fontSize: 28, fontWeight: "700" }}>
-              FatigueSense
-            </Text>
-            <Text style={{ color: "#999", marginTop: 6 }}>
-              Quick neuromuscular readiness check
-            </Text>
-            {user && (
-              <Text style={{ color: "#666", marginTop: 4, fontSize: 12 }}>
-                Signed in as {user.primaryEmailAddress?.emailAddress}
+          <View style={{ flexDirection: "row", alignItems: "center", padding: 20, borderBottomWidth: 1, borderBottomColor: "#1a1a1a" }}>
+            <TouchableOpacity
+              onPress={() => setDrawerVisible(true)}
+              style={{ marginRight: 16, padding: 8 }}
+            >
+              <View style={{ width: 24, height: 2, backgroundColor: "white", marginBottom: 6 }} />
+              <View style={{ width: 24, height: 2, backgroundColor: "white", marginBottom: 6 }} />
+              <View style={{ width: 24, height: 2, backgroundColor: "white" }} />
+            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: "white", fontSize: 24, fontWeight: "700" }}>
+                FatigueSense
               </Text>
-            )}
+              {user && (
+                <Text style={{ color: "#666", fontSize: 12 }}>
+                  {user.primaryEmailAddress?.emailAddress}
+                </Text>
+              )}
+            </View>
           </View>
+          
+          <ScrollView style={{ flex: 1 }}>
+            <View style={{ padding: 20 }}>
+              <Text style={{ color: "#999", marginBottom: 16 }}>
+                Quick neuromuscular readiness check
+              </Text>
+            </View>
 
-          <View style={{ padding: 20, gap: 12 }}>
+            <View style={{ padding: 20, gap: 12 }}>
             <Card
               title="Tapping Test"
               subtitle="Motor speed & rhythm"
@@ -663,7 +744,7 @@ export default function Index() {
             {imuData.length > 0 && (
               <>
                 <Card
-                  title="Export Data"
+                  title="Export Current Session"
                   subtitle={`${imuData.length} IMU samples collected`}
                   onPress={exportData}
                   disabled={!!running}
@@ -675,6 +756,15 @@ export default function Index() {
                   disabled={!!running}
                 />
               </>
+            )}
+
+            {sessions.length > 0 && (
+              <Card
+                title="Export All Sessions"
+                subtitle={`Export ${sessions.length} saved session${sessions.length > 1 ? 's' : ''} for cloud sync`}
+                onPress={exportAllSessions}
+                disabled={!!running}
+              />
             )}
 
             {sessions.length > 0 && (
@@ -720,111 +810,74 @@ export default function Index() {
               </View>
             )}
 
-            {sessions.length > 0 && (
-              <TouchableOpacity
-                style={{
-                  backgroundColor: "#22c55e",
-                  padding: 16,
-                  borderRadius: 12,
-                  alignItems: "center",
-                  marginTop: 8,
-                }}
-                onPress={() => router.push("/analysis")}
-              >
-                <Text
-                  style={{ color: "white", fontSize: 16, fontWeight: "600" }}
-                >
-                  🤖 AI Fatigue Analysis
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={{
-                backgroundColor: "#1a1a1a",
-                padding: 16,
-                borderRadius: 12,
-                alignItems: "center",
-                marginTop: 8,
-              }}
-              onPress={() => router.push("/profile")}
-            >
-              <Text
-                style={{ color: "#3b82f6", fontSize: 16, fontWeight: "600" }}
-              >
-                View Profile
-              </Text>
-            </TouchableOpacity>
           </View>
 
-          <FlatList
-            data={[tap, sway, move].filter(Boolean) as TestResult[]}
-            keyExtractor={(i) => i.type + i.at}
-            style={{ paddingHorizontal: 20 }}
-            renderItem={({ item }) => (
-              <View
-                style={{
-                  backgroundColor: "#1a1a1a",
-                  marginBottom: 16,
-                  padding: 16,
-                  borderRadius: 12,
-                }}
-              >
-                <Text
-                  style={{
-                    color: "white",
-                    fontSize: 18,
-                    fontWeight: "600",
-                    textTransform: "capitalize",
-                  }}
-                >
-                  {item.type}
-                </Text>
-                <Text
-                  style={{ color: "white", fontSize: 30, marginBottom: 12 }}
-                >
-                  {item.score}
-                </Text>
-
+            <View style={{ paddingHorizontal: 20 }}>
+              {[tap, sway, move].filter(Boolean).map((item) => (
                 <View
+                  key={item!.type + item!.at}
                   style={{
-                    borderTopWidth: 1,
-                    borderTopColor: "#333",
-                    paddingTop: 12,
+                    backgroundColor: "#1a1a1a",
+                    marginBottom: 16,
+                    padding: 16,
+                    borderRadius: 12,
                   }}
                 >
                   <Text
-                    style={{ color: "#999", fontSize: 14, marginBottom: 8 }}
+                    style={{
+                      color: "white",
+                      fontSize: 18,
+                      fontWeight: "600",
+                      textTransform: "capitalize",
+                    }}
                   >
-                    Metrics
+                    {item!.type}
                   </Text>
-                  {Object.entries(item.raw).map(([key, value]) => (
-                    <View
-                      key={key}
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        marginBottom: 4,
-                      }}
+                  <Text
+                    style={{ color: "white", fontSize: 30, marginBottom: 12 }}
+                  >
+                    {item!.score}
+                  </Text>
+
+                  <View
+                    style={{
+                      borderTopWidth: 1,
+                      borderTopColor: "#333",
+                      paddingTop: 12,
+                    }}
+                  >
+                    <Text
+                      style={{ color: "#999", fontSize: 14, marginBottom: 8 }}
                     >
-                      <Text style={{ color: "#aaa", fontSize: 13 }}>
-                        {key.replace(/([A-Z])/g, " $1").trim()}
-                      </Text>
-                      <Text
+                      Metrics
+                    </Text>
+                    {Object.entries(item!.raw).map(([key, value]) => (
+                      <View
+                        key={key}
                         style={{
-                          color: "white",
-                          fontSize: 13,
-                          fontWeight: "500",
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          marginBottom: 4,
                         }}
                       >
-                        {typeof value === "number" ? value.toFixed(2) : value}
-                      </Text>
-                    </View>
-                  ))}
+                        <Text style={{ color: "#aaa", fontSize: 13 }}>
+                          {key.replace(/([A-Z])/g, " $1").trim()}
+                        </Text>
+                        <Text
+                          style={{
+                            color: "white",
+                            fontSize: 13,
+                            fontWeight: "500",
+                          }}
+                        >
+                          {typeof value === "number" ? value.toFixed(2) : value}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              </View>
-            )}
-            ListFooterComponent={
+              ))}
+
               <View style={{ marginBottom: 50 }}>
                 <View
                   style={{
@@ -841,10 +894,15 @@ export default function Index() {
                   </Text>
                 </View>
               </View>
-            }
-          />
+            </View>
+          </ScrollView>
 
           {modal}
+          
+          <DrawerMenu
+            visible={drawerVisible}
+            onClose={() => setDrawerVisible(false)}
+          />
         </SafeAreaView>
       </SignedIn>
     </>

@@ -1,0 +1,202 @@
+{
+  "sessions": [
+    {
+      "timestamp": "2025-11-09T09:01:22.239Z",
+      "results": [
+        {
+          "type": "tapping",
+          "score": 62,
+          "raw": {
+            "taps": 89,
+            "tapsPerSec": 5.933333333333334,
+            "avgInterval": 162.0681818181818,
+            "jitter": 20.008972677359175
+          },
+          "at": 1762678826894
+        },
+        {
+          "type": "sway",
+          "score": 65,
+          "raw": {
+            "variance": 0.03157513500858425
+          },
+          "at": 1762678848487
+        },
+        {
+          "type": "movement",
+          "score": 20,
+          "raw": {
+            "std": 0.0055473164791667
+          },
+          "at": 1762678882200
+        }
+      ],
+      "metadata": {
+        "deviceId": "android-unknown",
+        "testType": "full-assessment",
+        "durationSeconds": 55,
+        "totalSamples": 1497
+      }
+    },
+    {
+      "timestamp": "2025-11-09T08:50:19.776Z",
+      "results": [
+        {
+          "type": "tapping",
+          "score": 35,
+          "raw": {
+            "taps": 0,
+            "tapsPerSec": 0,
+            "avgInterval": 0,
+            "jitter": 0
+          },
+          "at": 1762677389449
+        },
+        {
+          "type": "sway",
+          "score": 100,
+          "raw": {
+            "variance": 0.000013525584841939727
+          },
+          "at": 1762677626821
+        },
+        {
+          "type": "movement",
+          "score": 37,
+          "raw": {
+            "std": 0.03589614994737216
+          },
+          "at": 1762678219740
+        }
+      ],
+      "metadata": {
+        "deviceId": "android-unknown",
+        "testType": "full-assessment",
+        "durationSeconds": 830,
+        "totalSamples": 1497
+      }
+    },
+    {
+      "timestamp": "2025-11-09T08:25:18.875Z",
+      "results": [
+        {
+          "type": "tapping",
+          "score": 35,
+          "raw": {
+            "taps": 0,
+            "tapsPerSec": 0,
+            "avgInterval": 0,
+            "jitter": 0
+          },
+          "at": 1762676658623
+        },
+        {
+          "type": "sway",
+          "score": 0,
+          "raw": {
+            "variance": 0.12387249550426886
+          },
+          "at": 1762676681814
+        },
+        {
+          "type": "movement",
+          "score": 54,
+          "raw": {
+            "std": 0.23333814385500948
+          },
+          "at": 1762676718837
+        }
+      ],
+      "metadata": {
+        "deviceId": "android-unknown",
+        "testType": "full-assessment",
+        "durationSeconds": 60,
+        "totalSamples": 1498
+      }
+    },
+    {
+      "timestamp": "2025-11-09T08:23:45.089Z",
+      "results": [
+        {
+          "type": "tapping",
+          "score": 10,
+          "raw": {
+            "taps": 48,
+            "tapsPerSec": 3.2,
+            "avgInterval": 293.6808510638298,
+            "jitter": 180.51900429016882
+          },
+          "at": 1762676563501
+        },
+        {
+          "type": "sway",
+          "score": 100,
+          "raw": {
+            "variance": 0.0011991186465265507
+          },
+          "at": 1762676587309
+        },
+        {
+          "type": "movement",
+          "score": 0,
+          "raw": {
+            "std": 0.4811255950249912
+          },
+          "at": 1762676625064
+        }
+      ],
+      "metadata": {
+        "deviceId": "android-unknown",
+        "testType": "full-assessment",
+        "durationSeconds": 62,
+        "totalSamples": 1496
+      }
+    },
+    {
+      "timestamp": "2025-11-09T08:18:41.166Z",
+      "results": [
+        {
+          "type": "tapping",
+          "score": 60,
+          "raw": {
+            "taps": 84,
+            "tapsPerSec": 5.6,
+            "avgInterval": 159.74698795180723,
+            "jitter": 18.609392222191804
+          },
+          "at": 1762676257419
+        },
+        {
+          "type": "sway",
+          "score": 100,
+          "raw": {
+            "variance": 0.000005365483870315509
+          },
+          "at": 1762676279290
+        },
+        {
+          "type": "movement",
+          "score": 19,
+          "raw": {
+            "std": 0.00351728877766602
+          },
+          "at": 1762676321123
+        }
+      ],
+      "metadata": {
+        "deviceId": "android-unknown",
+        "testType": "full-assessment",
+        "durationSeconds": 64,
+        "totalSamples": 1500
+      }
+    }
+  ],
+  "exportedAt": "2025-11-09T09:15:04.301Z",
+  "totalSessions": 5,
+  "deviceInfo": {
+    "platform": "android",
+    "modelName": "SM-G990U",
+    "osVersion": "15",
+    "manufacturer": "samsung"
+  }
+}

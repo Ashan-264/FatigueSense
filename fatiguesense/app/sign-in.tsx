@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   SafeAreaView,
-  View,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -34,7 +34,11 @@ export default function SignInScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#0f0f0f" }}>
-      <View style={{ flex: 1, padding: 20, justifyContent: "center" }}>
+      <ScrollView 
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 20, justifyContent: "center", flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text
           style={{
             color: "white",
@@ -110,7 +114,7 @@ export default function SignInScreen() {
         >
           <Text style={{ color: "#666", fontSize: 14 }}>Go Back</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

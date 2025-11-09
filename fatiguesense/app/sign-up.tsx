@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   SafeAreaView,
-  View,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -51,7 +51,11 @@ export default function SignUpScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#0f0f0f" }}>
-      <View style={{ flex: 1, padding: 20, justifyContent: "center" }}>
+      <ScrollView 
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 20, justifyContent: "center", flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+      >
         {!pendingVerification ? (
           <>
             <Text
@@ -176,7 +180,7 @@ export default function SignUpScreen() {
             </TouchableOpacity>
           </>
         )}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
