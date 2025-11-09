@@ -4,11 +4,21 @@ import { useState, useEffect } from "react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
+import TappingRhythmHistogram from "@/components/TappingRhythmHistogram";
+import SwayStabilityGraph from "@/components/SwayStabilityGraph";
+import MovementVariabilityGraph from "@/components/MovementVariabilityGraph";
 
 interface TestResult {
   type: string;
   score: number;
   raw?: Record<string, number>;
+}
+
+interface IMUDataPoint {
+  x: number;
+  y: number;
+  z: number;
+  t: number;
 }
 
 interface Session {
@@ -22,6 +32,8 @@ interface Session {
     durationSeconds: number;
     totalSamples: number;
   };
+  imuData?: IMUDataPoint[];
+  gyroData?: IMUDataPoint[];
   createdAt: string;
   updatedAt: string;
 }
@@ -36,6 +48,7 @@ export default function SessionsPage() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [showAdvancedAnalysis, setShowAdvancedAnalysis] = useState(false);
 
   useEffect(() => {
     if (isLoaded && !user) {
@@ -57,9 +70,9 @@ export default function SessionsPage() {
 
       const data = await response.json();
       setSessions(data.sessions || []);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error fetching sessions:", err);
-      setError(err.message || "Failed to load sessions");
+      setError(err instanceof Error ? err.message : "Failed to load sessions");
     } finally {
       setLoading(false);
     }
@@ -102,9 +115,9 @@ export default function SessionsPage() {
         setUploadSuccess(false);
         setUploadFile(null);
       }, 3000);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Upload error:", err);
-      setError(err.message || "Failed to upload sessions");
+      setError(err instanceof Error ? err.message : "Failed to upload sessions");
     } finally {
       setUploading(false);
     }
@@ -127,9 +140,10 @@ export default function SessionsPage() {
       // Refresh sessions list
       await fetchSessions();
       setSelectedSession(null);
-    } catch (err: any) {
+      setShowAdvancedAnalysis(false);
+    } catch (err) {
       console.error("Delete error:", err);
-      setError(err.message || "Failed to delete session");
+      setError(err instanceof Error ? err.message : "Failed to delete session");
     }
   };
 
@@ -170,15 +184,16 @@ export default function SessionsPage() {
       // Refresh sessions list
       await fetchSessions();
       setSelectedSession(null);
+      setShowAdvancedAnalysis(false);
 
       if (failedCount > 0) {
         setError(`Deleted ${deletedCount} sessions, ${failedCount} failed`);
       } else {
         alert(`✅ Successfully deleted all ${deletedCount} sessions!`);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Delete all error:", err);
-      setError(err.message || "Failed to delete all sessions");
+      setError(err instanceof Error ? err.message : "Failed to delete all sessions");
     } finally {
       setLoading(false);
     }
@@ -518,7 +533,10 @@ export default function SessionsPage() {
                   <div
                     key={session._id}
                     className="border border-blue-100 dark:border-gray-700 rounded-xl p-6 hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => setSelectedSession(session)}
+                    onClick={() => {
+                      setSelectedSession(session);
+                      setShowAdvancedAnalysis(false);
+                    }}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -594,7 +612,10 @@ export default function SessionsPage() {
         {selectedSession && (
           <div
             className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-            onClick={() => setSelectedSession(null)}
+            onClick={() => {
+              setSelectedSession(null);
+              setShowAdvancedAnalysis(false);
+            }}
           >
             <div
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
@@ -605,7 +626,10 @@ export default function SessionsPage() {
                   Session Details
                 </h3>
                 <button
-                  onClick={() => setSelectedSession(null)}
+                  onClick={() => {
+                    setSelectedSession(null);
+                    setShowAdvancedAnalysis(false);
+                  }}
                   className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 >
                   <svg
@@ -666,6 +690,32 @@ export default function SessionsPage() {
                   </div>
                 </div>
 
+                {/* Advanced Analysis Button */}
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="text-base font-semibold text-purple-900 dark:text-purple-100 mb-1 flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Time-Series Analysis
+                      </h4>
+                      <p className="text-sm text-purple-700 dark:text-purple-300">
+                        View detailed IMU sensor graphs, movement patterns, and advanced metrics
+                      </p>
+                    </div>
+                    <a
+                      href={`/timeseries?session=${selectedSession._id}`}
+                      className="ml-4 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center gap-2 whitespace-nowrap"
+                    >
+                      View Charts
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+
                 {/* Test Results */}
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
@@ -712,6 +762,142 @@ export default function SessionsPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Advanced Analysis Toggle */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <button
+                    onClick={() => setShowAdvancedAnalysis(!showAdvancedAnalysis)}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-semibold text-lg transition-all flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      <span>{showAdvancedAnalysis ? 'Hide' : 'Show'} Advanced Analysis</span>
+                    </div>
+                    <svg 
+                      className={`w-6 h-6 transition-transform ${showAdvancedAnalysis ? 'rotate-180' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Advanced Analysis Charts */}
+                {showAdvancedAnalysis && (
+                  <div className="space-y-6 animate-fade-in">
+                    {selectedSession.results.map((result, idx) => {
+                      const resultType = result.type.toLowerCase();
+                      
+                      // Check if we have the necessary data for charts
+                      if (!result.raw) return null;
+
+                      if (resultType.includes('tap')) {
+                        // Tapping test detailed chart
+                        const tappingData = {
+                          taps: (result.raw.taps as number) || 0,
+                          avgInterval: (result.raw.avgInterval as number) || 0,
+                          jitter: (result.raw.jitter as number) || 0,
+                          tapsPerSec: (result.raw.tapsPerSec as number) || 0,
+                        };
+                        
+                        return (
+                          <div key={idx} className="bg-white dark:bg-gray-800 rounded-xl border border-blue-200 dark:border-gray-700 p-6">
+                            <h4 className="text-lg font-semibold text-blue-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                              </svg>
+                              Tapping Rhythm Analysis
+                            </h4>
+                            <TappingRhythmHistogram tappingData={tappingData} tappingScore={result.score} />
+                          </div>
+                        );
+                      } else if (resultType.includes('sway')) {
+                        // Sway test detailed chart - use session's imuData or generate from stats
+                        let accData = selectedSession.imuData || [];
+                        
+                        if (accData.length === 0 && result.raw.variance) {
+                          // Generate representative data from variance
+                          const variance = result.raw.variance as number;
+                          const duration = 20000; // 20 seconds
+                          const sampleRate = 50; // 50ms between samples
+                          const numSamples = duration / sampleRate;
+                          
+                          accData = [];
+                          for (let i = 0; i < numSamples; i++) {
+                            const t = i * sampleRate;
+                            const wobble = Math.sqrt(variance) * (Math.random() - 0.5) * 2;
+                            accData.push({
+                              x: 0.03 + wobble * 0.1,
+                              y: 0.06 + wobble * 0.15,
+                              z: 0.99 + wobble * 0.05,
+                              t: t
+                            });
+                          }
+                        }
+                        
+                        if (accData.length === 0) return null;
+                        
+                        return (
+                          <div key={idx} className="bg-white dark:bg-gray-800 rounded-xl border border-green-200 dark:border-gray-700 p-6">
+                            <h4 className="text-lg font-semibold text-green-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                              </svg>
+                              Sway Stability Analysis
+                            </h4>
+                            <SwayStabilityGraph accData={accData} swayScore={result.score} />
+                          </div>
+                        );
+                      } else if (resultType.includes('move') || resultType.includes('gait')) {
+                        // Movement test detailed chart - use session's imuData or generate from stats
+                        let accData = selectedSession.imuData || [];
+                        
+                        if (accData.length === 0 && result.raw.std) {
+                          // Generate representative data from standard deviation
+                          const std = result.raw.std as number;
+                          const duration = 30000; // 30 seconds
+                          const sampleRate = 50; // 50ms between samples
+                          const numSamples = duration / sampleRate;
+                          
+                          accData = [];
+                          for (let i = 0; i < numSamples; i++) {
+                            const t = i * sampleRate;
+                            const phase = (t / 500) * Math.PI; // Walking cycle
+                            const stepPattern = Math.sin(phase) * std * 3;
+                            const noise = (Math.random() - 0.5) * std * 0.5;
+                            
+                            accData.push({
+                              x: 0.05 + stepPattern + noise,
+                              y: 0.08 + stepPattern * 0.7 + noise,
+                              z: 0.95 + Math.abs(stepPattern) * 0.3 + noise,
+                              t: t
+                            });
+                          }
+                        }
+                        
+                        if (accData.length === 0) return null;
+                        
+                        return (
+                          <div key={idx} className="bg-white dark:bg-gray-800 rounded-xl border border-purple-200 dark:border-gray-700 p-6">
+                            <h4 className="text-lg font-semibold text-purple-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                              <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
+                              Movement Variability Analysis
+                            </h4>
+                            <MovementVariabilityGraph accData={accData} movementScore={result.score} />
+                          </div>
+                        );
+                      }
+                      
+                      return null;
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>

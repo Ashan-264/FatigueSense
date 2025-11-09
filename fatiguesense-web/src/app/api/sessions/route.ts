@@ -36,10 +36,10 @@ export async function GET(request: NextRequest) {
       limit,
       skip,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching sessions:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch sessions', details: error.message },
+      { error: 'Failed to fetch sessions', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -80,10 +80,10 @@ export async function POST(request: NextRequest) {
       { success: true, session },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating session:', error);
     return NextResponse.json(
-      { error: 'Failed to create session', details: error.message },
+      { error: 'Failed to create session', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -109,10 +109,10 @@ export async function DELETE(request: NextRequest) {
       success: true,
       deletedCount: result.deletedCount,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error deleting sessions:', error);
     return NextResponse.json(
-      { error: 'Failed to delete sessions', details: error.message },
+      { error: 'Failed to delete sessions', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

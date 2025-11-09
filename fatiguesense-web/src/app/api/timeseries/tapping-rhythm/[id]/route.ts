@@ -91,10 +91,10 @@ export async function GET(
       sessionId,
       ...chartData,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Tapping rhythm query error:', error);
     return NextResponse.json(
-      { error: 'Query failed', message: error.message },
+      { error: 'Query failed', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

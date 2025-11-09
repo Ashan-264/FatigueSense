@@ -4,6 +4,20 @@ import connectToDatabase from '@/lib/mongodb';
 import Session from '@/models/Session';
 import TimeSeriesIMU from '@/models/TimeSeriesIMU';
 
+interface IMUDataPoint {
+  x: number;
+  y: number;
+  z: number;
+  t?: number;
+  timestamp?: number;
+}
+
+interface GyroDataPoint {
+  x: number;
+  y: number;
+  z: number;
+}
+
 /**
  * POST /api/sessions/upload - Bulk upload sessions from mobile app
  * 
@@ -122,8 +136,8 @@ export async function POST(request: NextRequest) {
             const baseTimestamp = new Date(sessionData.timestamp || session.timestamp).getTime();
             console.log(`[UPLOAD] Base timestamp: ${new Date(baseTimestamp).toISOString()}`);
             
-            const timeSeriesSamples = sessionData.imuData.map((acc: any, idx: number) => {
-              const gyro = sessionData.gyroData[idx] || { x: 0, y: 0, z: 0 };
+            const timeSeriesSamples = sessionData.imuData.map((acc: IMUDataPoint, idx: number) => {
+              const gyro: GyroDataPoint = sessionData.gyroData[idx] || { x: 0, y: 0, z: 0 };
               
               // Handle both absolute and relative timestamps
               let absoluteTimestamp: number;
@@ -193,18 +207,19 @@ export async function POST(request: NextRequest) {
               
               totalTimeSeriesSamples += inserted.length;
             }
-          } catch (tsError: any) {
-            console.error(`[UPLOAD] ❌ Failed to insert time-series data for session ${i}:`, tsError.message);
+          } catch (tsError) {
+            const errorMessage = tsError instanceof Error ? tsError.message : 'Unknown error';
+            console.error(`[UPLOAD] ❌ Failed to insert time-series data for session ${i}:`, errorMessage);
             console.error(`[UPLOAD] Error details:`, tsError);
             // Non-blocking: continue even if time-series insert fails
           }
         } else {
           console.log(`[UPLOAD] Session ${i}: No IMU data found (imuData: ${sessionData.imuData?.length || 0}, gyroData: ${sessionData.gyroData?.length || 0})`);
         }
-      } catch (error: any) {
+      } catch (error) {
         errors.push({
           index: i,
-          error: error.message,
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
@@ -227,10 +242,10 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error uploading sessions:', error);
     return NextResponse.json(
-      { error: 'Failed to upload sessions', details: error.message },
+      { error: 'Failed to upload sessions', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

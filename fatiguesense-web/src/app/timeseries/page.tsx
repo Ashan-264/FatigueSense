@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import { useSearchParams } from 'next/navigation';
 import SwayStabilityChart from '@/components/charts/SwayStabilityChart';
 import MovementSmoothnessChart from '@/components/charts/MovementSmoothnessChart';
 import TappingRhythmChart from '@/components/charts/TappingRhythmChart';
@@ -38,6 +39,7 @@ interface DailyData {
 
 export default function TimeSeriesPage() {
   const { isLoaded, userId } = useAuth();
+  const searchParams = useSearchParams();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,11 +75,19 @@ export default function TimeSeriesPage() {
       if (!res.ok) throw new Error('Failed to fetch sessions');
       const data = await res.json();
       setSessions(data.sessions || []);
-      if (data.sessions && data.sessions.length > 0) {
+      
+      // Check if there's a session ID in the URL query params
+      const sessionFromUrl = searchParams.get('session');
+      
+      if (sessionFromUrl && data.sessions.some((s: Session) => s._id === sessionFromUrl)) {
+        // If the session exists in the list, select it
+        setSelectedSession(sessionFromUrl);
+      } else if (data.sessions && data.sessions.length > 0) {
+        // Otherwise, select the first session
         setSelectedSession(data.sessions[0]._id);
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -110,8 +120,8 @@ export default function TimeSeriesPage() {
         setSessionData(null);
         setTappingData(null);
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
       setSessionData(null);
       setTappingData(null);
     } finally {
@@ -166,9 +176,9 @@ export default function TimeSeriesPage() {
       }
 
       setTimeout(() => setUploadSuccess(null), 5000);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Upload error:', err);
-      setError(err.message || 'Failed to upload time-series data');
+      setError(err instanceof Error ? err.message : 'Failed to upload time-series data');
     } finally {
       setUploading(false);
       // Reset file input

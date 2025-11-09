@@ -74,9 +74,9 @@ export default function Page() {
         );
         setSelectedSessionsForAI(defaultSelected);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error fetching sessions:", err);
-      setError(err.message || "Failed to load sessions");
+      setError(err instanceof Error ? err.message : "Failed to load sessions");
     } finally {
       setLoading(false);
     }
@@ -134,9 +134,9 @@ export default function Page() {
 
       const data = await response.json();
       setAiAnalysis(data.analysis);
-    } catch (err: any) {
+    } catch (err) {
       console.error("AI analysis error:", err);
-      setError(err.message || "Failed to analyze sessions");
+      setError(err instanceof Error ? err.message : "Failed to analyze sessions");
     } finally {
       setAiLoading(false);
     }
@@ -661,6 +661,32 @@ export default function Page() {
                         />
                       </svg>
                     </div>
+                  </div>
+                </div>
+
+                {/* Advanced Analysis Button */}
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl shadow-lg p-6 border border-purple-200 dark:border-purple-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Advanced Time-Series Analysis
+                      </h3>
+                      <p className="text-sm text-purple-700 dark:text-purple-300">
+                        View detailed IMU sensor graphs, movement patterns, sway stability charts, and advanced biomechanical metrics
+                      </p>
+                    </div>
+                    <a
+                      href={`/timeseries?session=${selectedSession._id}`}
+                      className="ml-6 px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all flex items-center gap-2 whitespace-nowrap"
+                    >
+                      View Detailed Charts
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </a>
                   </div>
                 </div>
 

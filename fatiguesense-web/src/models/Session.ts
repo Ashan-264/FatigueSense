@@ -3,7 +3,7 @@ import mongoose, { Schema, Model } from 'mongoose';
 export interface ITestResult {
   type: string;
   score: number;
-  raw: any;
+  raw: Record<string, unknown>;
 }
 
 export interface ISession {

@@ -74,10 +74,10 @@ export async function POST(request: NextRequest) {
       skipped: samples.length - validSamples.length,
       total: samples.length,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Time-series insert error:', error);
     return NextResponse.json(
-      { error: 'Insert failed', message: error.message },
+      { error: 'Insert failed', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

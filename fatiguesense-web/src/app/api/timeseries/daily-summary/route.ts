@@ -111,10 +111,10 @@ export async function GET(request: NextRequest) {
       success: true,
       ...chartData,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Daily summary query error:', error);
     return NextResponse.json(
-      { error: 'Query failed', message: error.message },
+      { error: 'Query failed', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

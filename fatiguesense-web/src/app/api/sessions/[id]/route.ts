@@ -42,10 +42,10 @@ export async function GET(
     }
 
     return NextResponse.json({ session });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching session:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch session', details: error.message },
+      { error: 'Failed to fetch session', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -92,10 +92,10 @@ export async function DELETE(
       success: true,
       message: 'Session deleted successfully',
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error deleting session:', error);
     return NextResponse.json(
-      { error: 'Failed to delete session', details: error.message },
+      { error: 'Failed to delete session', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -153,10 +153,10 @@ export async function PATCH(
       success: true,
       session,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating session:', error);
     return NextResponse.json(
-      { error: 'Failed to update session', details: error.message },
+      { error: 'Failed to update session', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

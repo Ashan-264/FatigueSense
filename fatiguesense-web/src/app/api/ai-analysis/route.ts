@@ -3,6 +3,20 @@ import { auth } from "@clerk/nextjs/server";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+interface SessionResult {
+  type: string;
+  score: number;
+  raw?: Record<string, number>;
+}
+
+interface SessionData {
+  timestamp: string;
+  metadata?: {
+    testType?: string;
+  };
+  results: SessionResult[];
+}
+
 interface SessionSummary {
   sessionNumber: number;
   date: string;
@@ -50,12 +64,12 @@ export async function POST(request: NextRequest) {
 
     // Prepare session summary for AI
     const sessionSummary: SessionSummary[] = sessions.map(
-      (session: any, idx: number) => ({
+      (session: SessionData, idx: number) => ({
         sessionNumber: idx + 1,
         date: new Date(session.timestamp).toLocaleDateString(),
         time: new Date(session.timestamp).toLocaleTimeString(),
         testType: session.metadata?.testType || "unknown",
-        results: session.results.map((r: any) => ({
+        results: session.results.map((r: SessionResult) => ({
           type: r.type,
           score: r.score,
           metrics: r.raw,
@@ -212,25 +226,27 @@ Tone:
       analysis: generatedText,
       sessionsAnalyzed: sessions.length,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Gemini API error:", error);
 
     let errorMessage = "An unexpected error occurred. Please try again.";
     let statusCode = 500;
 
-    if (error.message?.includes("API key")) {
+    const errorMsg = error instanceof Error ? error.message : '';
+    
+    if (errorMsg.includes("API key")) {
       errorMessage =
         "Invalid or expired API key. Please check your Gemini API key configuration.";
       statusCode = 401;
     } else if (
-      error.message?.includes("429") ||
-      error.message?.includes("quota")
+      errorMsg.includes("429") ||
+      errorMsg.includes("quota")
     ) {
       errorMessage =
         "Rate limit exceeded. Please wait a few minutes before trying again.";
       statusCode = 429;
-    } else if (error.message) {
-      errorMessage = error.message;
+    } else if (errorMsg) {
+      errorMessage = errorMsg;
     }
 
     return NextResponse.json(
