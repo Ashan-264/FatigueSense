@@ -1,7 +1,9 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# dependencies
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
 
 # Expo
 .expo/
@@ -9,33 +11,90 @@ dist/
 web-build/
 expo-env.d.ts
 
-# Native
-.kotlin/
+# Native builds
+/ios
+/android
 *.orig.*
+.kotlin/
+
+# Environment variables (SENSITIVE - contains API keys)
+.env
+.env.*
+!.env.example
+*.local
+
+# Credentials & Keys (SENSITIVE)
 *.jks
 *.p8
 *.p12
 *.key
+*.keystore
 *.mobileprovision
+*.pem
+google-services.json
+GoogleService-Info.plist
 
-# Metro
+# Metro bundler
 .metro-health-check*
+.metro-config.js
 
-# debug
+# Debugging
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
+logs/
+*.log.*
 
-# macOS
-.DS_Store
-*.pem
+# Testing
+coverage/
+.nyc_output/
 
-# local env files
-.env*.local
-
-# typescript
+# TypeScript
 *.tsbuildinfo
+*.tsbuild
 
-# generated native folders
-/ios
-/android
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.history/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Build outputs
+build/
+.gradle/
+*.apk
+*.aab
+*.ipa
+
+# Package manager
+package-lock.json.bak
+yarn.lock.bak
+
+# Local configuration
+.npmrc.local

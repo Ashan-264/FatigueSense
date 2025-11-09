@@ -1,8 +1,51 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #eff6ff;
+  --background-gradient-from: #dbeafe;
+  --background-gradient-via: #e0f2fe;
+  --background-gradient-to: #cffafe;
+  --foreground: #1e3a8a;
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-light: #60a5fa;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --card-bg: #ffffff;
+  --card-border: #bfdbfe;
+  --border: #bfdbfe;
+  --accent: #0ea5e9;
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --header-border: #e5e7eb;
+  --text-primary: #1e3a8a;
+  --text-secondary: #3b82f6;
+  --text-tertiary: #60a5fa;
+  --text-muted: #64748b;
+  --input-bg: #f1f5f9;
+  --hover-bg: #f8fafc;
+}
+
+.dark {
+  --background: #0a0f1e;
+  --background-gradient-from: #0f172a;
+  --background-gradient-via: #1e293b;
+  --background-gradient-to: #334155;
+  --foreground: #e2e8f0;
+  --primary: #60a5fa;
+  --primary-dark: #3b82f6;
+  --primary-light: #93c5fd;
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --border: #334155;
+  --header-bg: rgba(30, 41, 59, 0.9);
+  --header-border: #334155;
+  --text-primary: #e2e8f0;
+  --text-secondary: #60a5fa;
+  --text-tertiary: #93c5fd;
+  --text-muted: #94a3b8;
+  --input-bg: #0f172a;
+  --hover-bg: #334155;
 }
 
 @theme inline {
@@ -12,15 +55,47 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #60a5fa;
 }

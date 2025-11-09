@@ -2,6 +2,31 @@ export interface IMUSample {
   x: number;
   y: number;
   z: number;
+  timestamp?: number; // milliseconds since test start
+}
+
+export interface GyroSample {
+  x: number;
+  y: number;
+  z: number;
+  timestamp?: number;
+}
+
+export interface TestMetadata {
+  testType?: string;
+  startTime?: string;
+  endTime?: string;
+  totalSamples?: number;
+  deviceInfo?: {
+    platform?: string;
+    modelName?: string;
+    osVersion?: string;
+    manufacturer?: string;
+  };
+  sensorConfig?: {
+    accelerometerInterval?: number;
+    gyroscopeInterval?: number;
+  };
 }
 
 export const magnitude = (d: IMUSample) =>

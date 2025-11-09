@@ -1,7 +1,19 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
-import { SafeAreaView, View, Text, FlatList, Alert } from "react-native";
-import { Accelerometer } from "expo-sensors";
+import React, { useState, useMemo } from "react";
+
+import {
+  SafeAreaView,
+  View,
+  Text,
+  FlatList,
+  Alert,
+  Share,
+  Platform,
+} from "react-native";
+import { Accelerometer, Gyroscope } from "expo-sensors";
 import * as Haptics from "expo-haptics";
+import { Paths, File } from "expo-file-system";
+import * as Sharing from "expo-sharing";
+import * as Device from "expo-device";
 
 import Card from "./components/Card";
 import Runner from "./components/Runner";
@@ -18,12 +30,28 @@ const DURATIONS = {
   MOVE_SECONDS: 30,
 };
 
+interface IMUSample {
+  x: number;
+  y: number;
+  z: number;
+  timestamp: number;
+}
+
+interface GyroSample {
+  x: number;
+  y: number;
+  z: number;
+  timestamp: number;
+}
+
 export default function App() {
   const [results, setResults] = useState<TestResult[]>([]);
   const [running, setRunning] = useState<
     null | "tapping" | "sway" | "movement"
   >(null);
   const [modal, setModal] = useState<React.ReactNode | null>(null);
+  const [imuData, setImuData] = useState<IMUSample[]>([]);
+  const [gyroData, setGyroData] = useState<GyroSample[]>([]);
 
   const tap = results.filter((r) => r.type === "tapping").slice(-1)[0];
   const sway = results.filter((r) => r.type === "sway").slice(-1)[0];
@@ -36,6 +64,68 @@ export default function App() {
   }, [tap, sway, move]);
 
   const pushResult = (r: TestResult) => setResults((prev) => [...prev, r]);
+
+  // ---------------------
+  // EXPORT DATA
+  // ---------------------
+  const exportData = async () => {
+    if (imuData.length === 0) {
+      Alert.alert("No Data", "No IMU data to export. Run a test first.");
+      return;
+    }
+
+    try {
+      const exportTimestamp = new Date().toISOString();
+      const firstTestTime =
+        results.length > 0
+          ? new Date(results[0].at).toISOString()
+          : exportTimestamp;
+
+      const data = {
+        acc: imuData,
+        gyro: gyroData,
+        timestamp: exportTimestamp,
+        testResults: results,
+        metadata: {
+          testType:
+            results.length > 0 ? results[results.length - 1].type : "unknown",
+          startTime: firstTestTime,
+          endTime: exportTimestamp,
+          totalSamples: imuData.length,
+          deviceInfo: {
+            platform: Platform.OS,
+            modelName: Device.modelName || "unknown",
+            osVersion: Device.osVersion || "unknown",
+            manufacturer: Device.manufacturer || "unknown",
+          },
+          sensorConfig: {
+            accelerometerInterval: 50, // ms for sway, 25 for movement
+            gyroscopeInterval: 50,
+          },
+        },
+      };
+
+      const jsonString = JSON.stringify(data, null, 2);
+      const filename = `fatiguesense_${Date.now()}.json`;
+      const file = new File(Paths.cache, filename);
+
+      // Write the JSON data to the file
+      await file.write(jsonString);
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(file.uri, {
+          mimeType: "application/json",
+          dialogTitle: "Export FatigueSense Data",
+        });
+      } else {
+        Alert.alert("Export Successful", `Data saved to ${file.uri}`);
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      Alert.alert("Export Failed", `Error: ${error}`);
+    }
+  };
 
   // ---------------------
   // TAPPING TEST
@@ -110,6 +200,8 @@ export default function App() {
         {
           text: "Start",
           onPress: () => {
+            const testStartTime = Date.now();
+
             setModal(
               <Runner
                 label="Hold Still"
@@ -120,16 +212,30 @@ export default function App() {
             );
 
             const buffer: number[] = [];
-            Accelerometer.setUpdateInterval(50);
+            const imuBuffer: IMUSample[] = [];
+            const gyroBuffer: GyroSample[] = [];
 
-            const sub = Accelerometer.addListener(({ x, y, z }) => {
+            Accelerometer.setUpdateInterval(50);
+            Gyroscope.setUpdateInterval(50);
+
+            const accSub = Accelerometer.addListener(({ x, y, z }) => {
+              const timestamp = Date.now() - testStartTime;
               buffer.push(Math.sqrt(x * x + y * y + z * z));
+              imuBuffer.push({ x, y, z, timestamp });
+            });
+
+            const gyroSub = Gyroscope.addListener(({ x, y, z }) => {
+              const timestamp = Date.now() - testStartTime;
+              gyroBuffer.push({ x, y, z, timestamp });
             });
 
             setTimeout(() => {
-              sub.remove();
+              accSub.remove();
+              gyroSub.remove();
               const { score, raw } = computeSway(buffer);
               pushResult({ type: "sway", score, raw, at: Date.now() });
+              setImuData((prev) => [...prev, ...imuBuffer]);
+              setGyroData((prev) => [...prev, ...gyroBuffer]);
               setRunning(null);
               setModal(null);
             }, durationMs);
@@ -163,11 +269,23 @@ export default function App() {
         {
           text: "Start",
           onPress: () => {
+            const testStartTime = Date.now();
             const buffer: number[] = [];
-            Accelerometer.setUpdateInterval(25);
+            const imuBuffer: IMUSample[] = [];
+            const gyroBuffer: GyroSample[] = [];
 
-            const sub = Accelerometer.addListener(({ x, y, z }) => {
+            Accelerometer.setUpdateInterval(25);
+            Gyroscope.setUpdateInterval(25);
+
+            const accSub = Accelerometer.addListener(({ x, y, z }) => {
+              const timestamp = Date.now() - testStartTime;
               buffer.push(Math.sqrt(x * x + y * y + z * z));
+              imuBuffer.push({ x, y, z, timestamp });
+            });
+
+            const gyroSub = Gyroscope.addListener(({ x, y, z }) => {
+              const timestamp = Date.now() - testStartTime;
+              gyroBuffer.push({ x, y, z, timestamp });
             });
 
             setModal(
@@ -180,9 +298,12 @@ export default function App() {
             );
 
             setTimeout(() => {
-              sub.remove();
+              accSub.remove();
+              gyroSub.remove();
               const { score, raw } = computeMovementScore(buffer);
               pushResult({ type: "movement", score, raw, at: Date.now() });
+              setImuData((prev) => [...prev, ...imuBuffer]);
+              setGyroData((prev) => [...prev, ...gyroBuffer]);
               setRunning(null);
               setModal(null);
             }, durationMs);
@@ -201,91 +322,130 @@ export default function App() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#0f0f0f" }}>
-      <View style={{ padding: 20 }}>
-        <Text style={{ color: "white", fontSize: 28, fontWeight: "700" }}>
-          FatigueSense
-        </Text>
-        <Text style={{ color: "#999", marginTop: 6 }}>
-          Quick neuromuscular readiness check
-        </Text>
-      </View>
+        <View style={{ padding: 20 }}>
+          <Text style={{ color: "white", fontSize: 28, fontWeight: "700" }}>
+            FatigueSense
+          </Text>
+          <Text style={{ color: "#999", marginTop: 6 }}>
+            Quick neuromuscular readiness check
+          </Text>
+        </View>
 
-      <View style={{ padding: 20, gap: 12 }}>
-        <Card
-          title="Tapping Test"
-          subtitle="Motor speed & rhythm"
-          onPress={runTappingTest}
-          disabled={!!running}
-        />
-        <Card
-          title="Sway Test"
-          subtitle="Balance & CNS fatigue"
-          onPress={runSwayTest}
-          disabled={!!running}
-        />
-        <Card
-          title="Movement Test"
-          subtitle="30s gait/activity proxy"
-          onPress={runMovementTest}
-          disabled={!!running}
-        />
-      </View>
+        <View style={{ padding: 20, gap: 12 }}>
+          <Card
+            title="Tapping Test"
+            subtitle="Motor speed & rhythm"
+            onPress={runTappingTest}
+            disabled={!!running}
+          />
+          <Card
+            title="Sway Test"
+            subtitle="Balance & CNS fatigue"
+            onPress={runSwayTest}
+            disabled={!!running}
+          />
+          <Card
+            title="Movement Test"
+            subtitle="30s gait/activity proxy"
+            onPress={runMovementTest}
+            disabled={!!running}
+          />
 
-      <FlatList
-        data={[tap, sway, move].filter(Boolean) as TestResult[]}
-        keyExtractor={(i) => i.type + i.at}
-        style={{ paddingHorizontal: 20 }}
-        renderItem={({ item }) => (
-          <View
-            style={{
-              backgroundColor: "#1a1a1a",
-              marginBottom: 16,
-              padding: 16,
-              borderRadius: 12,
-            }}
-          >
-            <Text style={{ color: "white", fontSize: 18, fontWeight: "600", textTransform: "capitalize" }}>
-              {item.type}
-            </Text>
-            <Text style={{ color: "white", fontSize: 30, marginBottom: 12 }}>{item.score}</Text>
-            
-            {/* Individual Metrics */}
-            <View style={{ borderTopWidth: 1, borderTopColor: "#333", paddingTop: 12 }}>
-              <Text style={{ color: "#999", fontSize: 14, marginBottom: 8 }}>Metrics</Text>
-              {Object.entries(item.raw).map(([key, value]) => (
-                <View key={key} style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                  <Text style={{ color: "#aaa", fontSize: 13 }}>
-                    {key.replace(/([A-Z])/g, " $1").trim()}
-                  </Text>
-                  <Text style={{ color: "white", fontSize: 13, fontWeight: "500" }}>
-                    {typeof value === "number" ? value.toFixed(2) : value}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-        ListFooterComponent={
-          <View style={{ marginBottom: 50 }}>
+          {imuData.length > 0 && (
+            <Card
+              title="Export Data"
+              subtitle={`${imuData.length} IMU samples collected`}
+              onPress={exportData}
+              disabled={!!running}
+            />
+          )}
+        </View>
+
+        <FlatList
+          data={[tap, sway, move].filter(Boolean) as TestResult[]}
+          keyExtractor={(i) => i.type + i.at}
+          style={{ paddingHorizontal: 20 }}
+          renderItem={({ item }) => (
             <View
               style={{
                 backgroundColor: "#1a1a1a",
-                padding: 20,
+                marginBottom: 16,
+                padding: 16,
                 borderRadius: 12,
               }}
             >
-              <Text style={{ color: "white", fontSize: 22 }}>
-                Fatigue Score
+              <Text
+                style={{
+                  color: "white",
+                  fontSize: 18,
+                  fontWeight: "600",
+                  textTransform: "capitalize",
+                }}
+              >
+                {item.type}
               </Text>
-              <Text style={{ color: "white", fontSize: 40, marginTop: 8 }}>
-                {fatigueScore ?? "—"}
+              <Text style={{ color: "white", fontSize: 30, marginBottom: 12 }}>
+                {item.score}
               </Text>
-            </View>
-          </View>
-        }
-      />
 
-      {modal}
-    </SafeAreaView>
+              {/* Individual Metrics */}
+              <View
+                style={{
+                  borderTopWidth: 1,
+                  borderTopColor: "#333",
+                  paddingTop: 12,
+                }}
+              >
+                <Text style={{ color: "#999", fontSize: 14, marginBottom: 8 }}>
+                  Metrics
+                </Text>
+                {Object.entries(item.raw).map(([key, value]) => (
+                  <View
+                    key={key}
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <Text style={{ color: "#aaa", fontSize: 13 }}>
+                      {key.replace(/([A-Z])/g, " $1").trim()}
+                    </Text>
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 13,
+                        fontWeight: "500",
+                      }}
+                    >
+                      {typeof value === "number" ? value.toFixed(2) : value}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+          ListFooterComponent={
+            <View style={{ marginBottom: 50 }}>
+              <View
+                style={{
+                  backgroundColor: "#1a1a1a",
+                  padding: 20,
+                  borderRadius: 12,
+                }}
+              >
+                <Text style={{ color: "white", fontSize: 22 }}>
+                  Fatigue Score
+                </Text>
+                <Text style={{ color: "white", fontSize: 40, marginTop: 8 }}>
+                  {fatigueScore ?? "—"}
+                </Text>
+              </View>
+            </View>
+          }
+        />
+
+        {modal}
+      </SafeAreaView>
   );
 }

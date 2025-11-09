@@ -1,9 +1,24 @@
 import { NextResponse } from "next/server";
-import { computeFatigueScore, IMUSample } from "@/lib/fatigue";
+import {
+  computeFatigueScore,
+  IMUSample,
+  GyroSample,
+  TestMetadata,
+} from "@/lib/fatigue";
+
+interface TestResult {
+  type: string;
+  score: number;
+  raw: Record<string, number>;
+  at: number;
+}
 
 interface IMURequest {
   acc: IMUSample[];
-  gyro: IMUSample[];
+  gyro: GyroSample[];
+  timestamp?: string;
+  testResults?: TestResult[];
+  metadata?: TestMetadata;
 }
 
 export async function POST(req: Request) {
@@ -14,5 +29,12 @@ export async function POST(req: Request) {
   }
 
   const results = computeFatigueScore(data.acc);
-  return NextResponse.json(results);
+
+  // Add metadata and gyro info to response
+  return NextResponse.json({
+    ...results,
+    metadata: data.metadata,
+    gyroSamples: data.gyro?.length || 0,
+    testResults: data.testResults,
+  });
 }

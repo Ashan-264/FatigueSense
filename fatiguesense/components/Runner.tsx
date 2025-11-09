@@ -8,6 +8,12 @@ interface Props {
   onPress?: () => void;
   isDone: (tick: number, elapsed: number) => boolean;
   onDone: () => void;
+  liveMetric?: {
+    value: number;
+    label: string;
+    color: string;
+    barPosition?: number; // 0-100 for sway stability bar
+  };
 }
 
 export default function Runner({
@@ -16,6 +22,7 @@ export default function Runner({
   onPress,
   isDone,
   onDone,
+  liveMetric,
 }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef(Date.now());
@@ -72,6 +79,49 @@ export default function Runner({
         >
           <Text style={{ color: "white", fontSize: 20 }}>Tap</Text>
         </TouchableOpacity>
+      )}
+
+      {/* Live Feedback Display */}
+      {liveMetric && (
+        <View style={{ marginTop: 30, alignItems: "center", width: "100%" }}>
+          <Text
+            style={{
+              color: liveMetric.color,
+              fontSize: 48,
+              fontWeight: "700",
+            }}
+          >
+            {liveMetric.value.toFixed(1)}
+          </Text>
+          <Text style={{ color: "#999", fontSize: 16, marginTop: 4 }}>
+            {liveMetric.label}
+          </Text>
+
+          {/* Stability Bar for Sway Test */}
+          {liveMetric.barPosition !== undefined && (
+            <View
+              style={{
+                width: "100%",
+                height: 40,
+                backgroundColor: "rgba(255,255,255,0.1)",
+                borderRadius: 20,
+                marginTop: 20,
+                overflow: "hidden",
+              }}
+            >
+              <View
+                style={{
+                  position: "absolute",
+                  left: `${liveMetric.barPosition}%`,
+                  top: 0,
+                  bottom: 0,
+                  width: 8,
+                  backgroundColor: liveMetric.color,
+                }}
+              />
+            </View>
+          )}
+        </View>
       )}
 
       <Text style={{ color: "#ccc", fontSize: 20, marginTop: 30 }}>
